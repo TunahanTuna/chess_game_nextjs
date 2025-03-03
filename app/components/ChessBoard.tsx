@@ -36,7 +36,7 @@ export default function ChessBoard({ theme }: ChessBoardProps) {
 
   const updateLegalMoves = (position: string) => {
     if (!game) return;
-    const moves = game.moves({ square: position, verbose: true });
+    const moves = game.moves({ square: position as any, verbose: true });
     setLegalMoves(moves.map((move) => move.to));
   };
 
