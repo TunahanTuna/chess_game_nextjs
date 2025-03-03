@@ -15,6 +15,7 @@ export default function ChessBoard({ theme }: ChessBoardProps) {
     x: number;
     y: number;
   } | null>(null);
+  const [legalMoves, setLegalMoves] = useState<string[]>([]);
 
   useEffect(() => {
     const newGame = new Chess();
@@ -33,35 +34,10 @@ export default function ChessBoard({ theme }: ChessBoardProps) {
     },
   };
 
-  const renderSquare = (i: number, j: number) => {
-    if (!game) return null;
-
-    const position = `${String.fromCharCode(97 + j)}${8 - i}`;
-    const piece = game.get(position as any);
-    const isLight = (i + j) % 2 === 0;
-    const squareColor = boardTheme[theme][isLight ? "light" : "dark"];
-    const isSelected = selectedPiece === position;
-
-    return (
-      <div
-        key={`${i}-${j}`}
-        className={`w-full h-full ${squareColor} ${
-          isSelected ? "ring-2 ring-blue-400" : ""
-        } flex items-center justify-center relative`}
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => handleDrop(e, position)}
-      >
-        {piece && (
-          <div
-            className="absolute w-full h-full flex items-center justify-center cursor-grab hover:opacity-75 transition-opacity"
-            draggable
-            onDragStart={(e) => handleDragStart(e, position)}
-          >
-            {getPieceSymbol(piece)}
-          </div>
-        )}
-      </div>
-    );
+  const updateLegalMoves = (position: string) => {
+    if (!game) return;
+    const moves = game.moves({ square: position, verbose: true });
+    setLegalMoves(moves.map((move) => move.to));
   };
 
   const handleDragStart = (e: React.DragEvent, position: string) => {
@@ -70,6 +46,44 @@ export default function ChessBoard({ theme }: ChessBoardProps) {
     if (piece && piece.color === (game.turn() === "w" ? "w" : "b")) {
       setSelectedPiece(position);
       setDraggedPiece({ position, x: e.clientX, y: e.clientY });
+      updateLegalMoves(position);
+    }
+  };
+
+  const handleSquareClick = (position: string) => {
+    if (!game) return;
+
+    const piece = game.get(position as any);
+
+    if (selectedPiece === null) {
+      if (piece && piece.color === (game.turn() === "w" ? "w" : "b")) {
+        setSelectedPiece(position);
+        updateLegalMoves(position);
+      }
+    } else {
+      try {
+        const move = game.move({
+          from: selectedPiece,
+          to: position,
+          promotion: "q",
+        });
+
+        if (move) {
+          const newGame = new Chess(game.fen());
+          setGame(newGame);
+          setBoard(newGame.board());
+        }
+        setSelectedPiece(null);
+        setLegalMoves([]);
+      } catch (e) {
+        if (piece && piece.color === (game.turn() === "w" ? "w" : "b")) {
+          setSelectedPiece(position);
+          updateLegalMoves(position);
+        } else {
+          setSelectedPiece(null);
+          setLegalMoves([]);
+        }
+      }
     }
   };
 
@@ -95,39 +109,45 @@ export default function ChessBoard({ theme }: ChessBoardProps) {
 
     setSelectedPiece(null);
     setDraggedPiece(null);
+    setLegalMoves([]);
   };
 
-  const handleSquareClick = (position: string) => {
-    if (!game) return;
+  const renderSquare = (i: number, j: number) => {
+    if (!game) return null;
 
+    const position = `${String.fromCharCode(97 + j)}${8 - i}`;
     const piece = game.get(position as any);
+    const isLight = (i + j) % 2 === 0;
+    const squareColor = boardTheme[theme][isLight ? "light" : "dark"];
+    const isSelected = selectedPiece === position;
+    const isLegalMove = legalMoves.includes(position);
 
-    if (selectedPiece === null) {
-      if (piece && piece.color === (game.turn() === "w" ? "w" : "b")) {
-        setSelectedPiece(position);
-      }
-    } else {
-      try {
-        const move = game.move({
-          from: selectedPiece,
-          to: position,
-          promotion: "q",
-        });
-
-        if (move) {
-          const newGame = new Chess(game.fen());
-          setGame(newGame);
-          setBoard(newGame.board());
-        }
-        setSelectedPiece(null);
-      } catch (e) {
-        if (piece && piece.color === (game.turn() === "w" ? "w" : "b")) {
-          setSelectedPiece(position);
-        } else {
-          setSelectedPiece(null);
-        }
-      }
-    }
+    return (
+      <div
+        key={`${i}-${j}`}
+        className={`w-full h-full ${squareColor} ${
+          isSelected ? "ring-2 ring-blue-400" : ""
+        } ${
+          isLegalMove ? "ring-2 ring-green-400" : ""
+        } flex items-center justify-center relative`}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => handleDrop(e, position)}
+        onClick={() => handleSquareClick(position)}
+      >
+        {piece && (
+          <div
+            className="absolute w-full h-full flex items-center justify-center cursor-grab hover:opacity-75 transition-opacity"
+            draggable
+            onDragStart={(e) => handleDragStart(e, position)}
+          >
+            {getPieceSymbol(piece)}
+          </div>
+        )}
+        {isLegalMove && !piece && (
+          <div className="w-3 h-3 rounded-full bg-green-400 opacity-50" />
+        )}
+      </div>
+    );
   };
 
   const getPieceSymbol = (piece: { type: string; color: string }) => {
