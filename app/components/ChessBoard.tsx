@@ -10,6 +10,11 @@ export default function ChessBoard({ theme }: ChessBoardProps) {
   const [game, setGame] = useState<Chess | null>(null);
   const [selectedPiece, setSelectedPiece] = useState<string | null>(null);
   const [board, setBoard] = useState<any[][]>([]);
+  const [draggedPiece, setDraggedPiece] = useState<{
+    position: string;
+    x: number;
+    y: number;
+  } | null>(null);
 
   useEffect(() => {
     const newGame = new Chess();
@@ -43,15 +48,53 @@ export default function ChessBoard({ theme }: ChessBoardProps) {
         className={`w-full h-full ${squareColor} ${
           isSelected ? "ring-2 ring-blue-400" : ""
         } flex items-center justify-center relative`}
-        onClick={() => handleSquareClick(position)}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => handleDrop(e, position)}
       >
         {piece && (
-          <div className="absolute w-full h-full flex items-center justify-center cursor-pointer hover:opacity-75 transition-opacity">
+          <div
+            className="absolute w-full h-full flex items-center justify-center cursor-grab hover:opacity-75 transition-opacity"
+            draggable
+            onDragStart={(e) => handleDragStart(e, position)}
+          >
             {getPieceSymbol(piece)}
           </div>
         )}
       </div>
     );
+  };
+
+  const handleDragStart = (e: React.DragEvent, position: string) => {
+    if (!game) return;
+    const piece = game.get(position as any);
+    if (piece && piece.color === (game.turn() === "w" ? "w" : "b")) {
+      setSelectedPiece(position);
+      setDraggedPiece({ position, x: e.clientX, y: e.clientY });
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, targetPosition: string) => {
+    e.preventDefault();
+    if (!game || !selectedPiece) return;
+
+    try {
+      const move = game.move({
+        from: selectedPiece,
+        to: targetPosition,
+        promotion: "q",
+      });
+
+      if (move) {
+        const newGame = new Chess(game.fen());
+        setGame(newGame);
+        setBoard(newGame.board());
+      }
+    } catch (e) {
+      // Invalid move
+    }
+
+    setSelectedPiece(null);
+    setDraggedPiece(null);
   };
 
   const handleSquareClick = (position: string) => {
