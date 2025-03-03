@@ -19,12 +19,12 @@ export default function ChessBoard({ theme }: ChessBoardProps) {
 
   const boardTheme = {
     light: {
-      light: "bg-amber-100",
-      dark: "bg-amber-800",
+      light: "bg-amber-50",
+      dark: "bg-amber-900",
     },
     dark: {
-      light: "bg-gray-400",
-      dark: "bg-gray-800",
+      light: "bg-slate-300",
+      dark: "bg-slate-900",
     },
   };
 
@@ -89,15 +89,25 @@ export default function ChessBoard({ theme }: ChessBoardProps) {
 
   const getPieceSymbol = (piece: { type: string; color: string }) => {
     const symbols: { [key: string]: string } = {
-      p: piece.color === "w" ? "♙" : "♟",
-      n: piece.color === "w" ? "♘" : "♞",
-      b: piece.color === "w" ? "♗" : "♝",
-      r: piece.color === "w" ? "♖" : "♜",
-      q: piece.color === "w" ? "♕" : "♛",
-      k: piece.color === "w" ? "♔" : "♚",
+      p: piece.color === "w" ? "♟" : "♟",
+      n: piece.color === "w" ? "♞" : "♞",
+      b: piece.color === "w" ? "♝" : "♝",
+      r: piece.color === "w" ? "♜" : "♜",
+      q: piece.color === "w" ? "♛" : "♛",
+      k: piece.color === "w" ? "♚" : "♚",
     };
     return (
-      <span className="text-4xl select-none">
+      <span
+        className={`text-4xl select-none ${
+          theme === "light"
+            ? piece.color === "w"
+              ? "text-amber-950 drop-shadow-md"
+              : "text-amber-800 drop-shadow-md"
+            : piece.color === "w"
+            ? "text-slate-100 drop-shadow-lg"
+            : "text-slate-400 drop-shadow-lg"
+        }`}
+      >
         {symbols[piece.type.toLowerCase()]}
       </span>
     );
