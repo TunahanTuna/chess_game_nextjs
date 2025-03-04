@@ -80,6 +80,7 @@ export default function ChessBoard({ theme }: ChessBoardProps) {
           const newGame = new Chess(game.fen());
           setGame(newGame);
           setBoard(newGame.board());
+          setMoveHistory(newGame.history({ verbose: true }));
         }
         setSelectedPiece(null);
         setLegalMoves([]);
@@ -110,6 +111,7 @@ export default function ChessBoard({ theme }: ChessBoardProps) {
         const newGame = new Chess(game.fen());
         setGame(newGame);
         setBoard(newGame.board());
+        setMoveHistory(newGame.history({ verbose: true }));
       }
     } catch (e) {
       // Invalid move
